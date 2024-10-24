@@ -8,13 +8,19 @@
 
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-8">
-          <RouterLink to="/pricing" class="text-gray-600 hover:text-[#00a3ff]">Pricing</RouterLink>
-          <RouterLink to="/about" class="text-gray-600 hover:text-[#00a3ff]">About</RouterLink>
-          <RouterLink to="/contact" class="text-gray-600 hover:text-[#00a3ff]">Contact</RouterLink>
-          <div class="flex items-center space-x-4">
-            <RouterLink to="/login" class="btn-secondary px-4 py-2">Log In</RouterLink>
-            <RouterLink to="/register" class="btn-primary px-4 py-2">Sign Up</RouterLink>
-          </div>
+          <template v-if="isAuthenticated">
+            <RouterLink :to="`/${userRole}`" class="text-gray-600 hover:text-[#00a3ff]">Dashboard</RouterLink>
+            <button @click="logout" class="text-gray-600 hover:text-[#00a3ff]">Logout</button>
+          </template>
+          <template v-else>
+            <RouterLink to="/pricing" class="text-gray-600 hover:text-[#00a3ff]">Pricing</RouterLink>
+            <RouterLink to="/about" class="text-gray-600 hover:text-[#00a3ff]">About</RouterLink>
+            <RouterLink to="/contact" class="text-gray-600 hover:text-[#00a3ff]">Contact</RouterLink>
+            <div class="flex items-center space-x-4">
+              <RouterLink to="/login" class="btn-secondary px-4 py-2">Log In</RouterLink>
+              <RouterLink to="/register" class="btn-primary px-4 py-2">Sign Up</RouterLink>
+            </div>
+          </template>
         </div>
 
         <!-- Mobile menu button -->
@@ -60,46 +66,74 @@
     <!-- Mobile menu -->
     <div class="md:hidden absolute w-full bg-white" :class="{'block': isOpen, 'hidden': !isOpen}">
       <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 shadow-lg">
-        <RouterLink
-          to="/pricing"
-          class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
-        >
-          Pricing
-        </RouterLink>
-        <RouterLink
-          to="/about"
-          class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
-        >
-          About
-        </RouterLink>
-        <RouterLink
-          to="/contact"
-          class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
-        >
-          Contact
-        </RouterLink>
-        <div class="mt-4 space-y-2">
+        <template v-if="isAuthenticated">
           <RouterLink
-            to="/login"
-            class="block w-full text-center btn-secondary py-2"
+            :to="`/${userRole}`"
+            class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
           >
-            Log In
+            Dashboard
+          </RouterLink>
+          <button
+            @click="logout"
+            class="block w-full text-left px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
+          >
+            Logout
+          </button>
+        </template>
+        <template v-else>
+          <RouterLink
+            to="/pricing"
+            class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
+          >
+            Pricing
           </RouterLink>
           <RouterLink
-            to="/register"
-            class="block w-full text-center btn-primary py-2"
+            to="/about"
+            class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
           >
-            Sign Up
+            About
           </RouterLink>
-        </div>
+          <RouterLink
+            to="/contact"
+            class="block px-3 py-2 rounded-md text-gray-600 hover:text-[#00a3ff] hover:bg-gray-100"
+          >
+            Contact
+          </RouterLink>
+          <div class="mt-4 space-y-2">
+            <RouterLink
+              to="/login"
+              class="block w-full text-center btn-secondary py-2"
+            >
+              Log In
+            </RouterLink>
+            <RouterLink
+              to="/register"
+              class="block w-full text-center btn-primary py-2"
+            >
+              Sign Up
+            </RouterLink>
+          </div>
+        </template>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, computed } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const isOpen = ref(false)
+const authStore = useAuthStore()
+const router = useRouter()
+
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const userRole = computed(() => authStore.user?.role)
+
+const logout = () => {
+  authStore.logout()
+  router.push('/')
+}
 </script>
+

@@ -8,6 +8,8 @@ import ParentDashboard from '../views/parent/Dashboard.vue'
 import EducatorDashboard from '../views/educator/Dashboard.vue'
 import SubjectRoom from '../views/student/SubjectRoom.vue'
 import Pricing from '../views/Pricing.vue'
+import About from '../views/About.vue'
+import Contact from '../views/Contact.vue'
 
 const routes = [
   {
@@ -32,6 +34,18 @@ const routes = [
     path: '/pricing',
     name: 'pricing',
     component: Pricing,
+    meta: { public: true }
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: About,
+    meta: { public: true }
+  },
+  {
+    path: '/contact',
+    name: 'contact',
+    component: Contact,
     meta: { public: true }
   },
   {
@@ -68,16 +82,18 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const isAuthenticated = authStore.isAuthenticated
-  const userRole = authStore.user?.role
 
-  if (!to.meta.public && !isAuthenticated) {
-    next('/login')
-    return
+  if (from.name === 'login' && to.name === 'landing') {
+    // Redirect to dashboard after login
+    return next({ name: authStore.user?.role || 'student' })
   }
 
-  if (to.meta.role && userRole !== to.meta.role) {
-    next(`/${userRole}`)
-    return
+  if (!to.meta.public && !isAuthenticated) {
+    return next('/login')
+  }
+
+  if (to.meta.role && authStore.user?.role !== to.meta.role) {
+    return next(`/${authStore.user?.role}`)
   }
 
   next()

@@ -69,7 +69,7 @@ const plans = [
   {
     id: 'basic',
     name: 'Basic',
-    price: '9.99',
+    price: '19.99',
     popular: true,
     description: 'Most popular choice for individual students',
     features: [
@@ -83,7 +83,7 @@ const plans = [
   {
     id: 'premium',
     name: 'Premium',
-    price: '19.99',
+    price: '29.99',
     description: 'Best value for families and educators',
     features: [
       'Everything in Basic',

@@ -1,13 +1,33 @@
-# Welcome to [Slidev](https://github.com/slidevjs/slidev)!
+# AI Study Pals
 
-[Edit on StackBlitz ⚡️](https://sli.dev/new)
+AI Study Pals is an innovative application designed to enhance your learning experience through AI-powered study companions.
 
-To start the slide show:
+## Features
 
-- `npm install`
-- `npm run dev`
-- visit http://localhost:3030
+- Personalized AI study partners
+- Interactive learning sessions
+- Progress tracking and analytics
+- Customizable study plans
 
-Edit the [slides.md](./slides.md) to see the changes.
+## Getting Started
 
-Learn more about Slidev on [documentations](https://sli.dev/).
+To run the AI Study Pals application locally:
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm run dev
+   ```
+4. Open your browser and visit `http://localhost:3000`
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
