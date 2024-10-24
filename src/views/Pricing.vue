@@ -12,8 +12,9 @@
         <div 
           v-for="plan in plans" 
           :key="plan.name"
-          class="bg-white rounded-2xl shadow-lg overflow-hidden"
-          :class="{ 'ring-4 ring-[#00a3ff] transform scale-105': plan.popular }"
+          class="bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer"
+          :class="{ 'ring-4 ring-[#00a3ff] transform scale-105': selectedPlan === plan.id }"
+          @click="selectPlan(plan.id)"
         >
           <div class="p-8">
             <h3 class="text-2xl font-bold text-[#2e3856] mb-2">{{ plan.name }}</h3>
@@ -52,6 +53,7 @@
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { ref } from 'vue'
 
 const plans = [
   {
@@ -95,4 +97,10 @@ const plans = [
     ]
   }
 ]
+
+const selectedPlan = ref('basic') // Default to 'basic' plan
+
+const selectPlan = (planId: string) => {
+  selectedPlan.value = planId
+}
 </script>
