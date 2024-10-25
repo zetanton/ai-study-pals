@@ -7,7 +7,6 @@
    # Python
    __pycache__/
    *.pyc
-   .venv/
 
    # Environment variables
    .env
@@ -27,3 +26,4 @@
    # Build directories
    build/
 node_modules
+.venv/
