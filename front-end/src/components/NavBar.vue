@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
         <div class="flex items-center">
-          <RouterLink to="/" class="text-2xl font-bold text-[#2e3856]">AI Study Pals</RouterLink>
+          <RouterLink :to="homeLink" class="text-2xl font-bold text-[#2e3856]">AI Study Pals</RouterLink>
         </div>
 
         <!-- Desktop Navigation -->
@@ -135,5 +135,20 @@ const logout = () => {
   authStore.logout()
   router.push('/')
 }
-</script>
 
+const homeLink = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return '/'
+  }
+  switch (authStore.user?.role) {
+    case 'student':
+      return '/student'
+    case 'parent':
+      return '/parent'
+    case 'educator':
+      return '/educator'
+    default:
+      return '/'
+  }
+})
+</script>

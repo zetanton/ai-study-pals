@@ -96,6 +96,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import type { User } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
@@ -104,7 +105,7 @@ const authStore = useAuthStore()
 const form = ref({
   name: '',
   email: '',
-  role: route.query.role || 'student',
+  role: (route.query.role as string) || 'student',
   password: ''
 })
 
@@ -113,7 +114,7 @@ const loading = ref(false)
 const handleSubmit = async () => {
   loading.value = true
   try {
-    await authStore.register(form.value)
+    await authStore.register(form.value as Partial<User>)
     router.push(`/${form.value.role}`)
   } catch (error) {
     alert('Registration failed')
@@ -122,3 +123,4 @@ const handleSubmit = async () => {
   }
 }
 </script>
+
