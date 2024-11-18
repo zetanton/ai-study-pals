@@ -10,6 +10,7 @@ import SubjectRoom from '../views/student/SubjectRoom.vue'
 import Pricing from '../views/Pricing.vue'
 import About from '../views/About.vue'
 import Contact from '../views/Contact.vue'
+import AgentSelection from '../views/student/AgentSelection.vue'
 
 const routes = [
   {
@@ -58,6 +59,12 @@ const routes = [
     path: '/student/subject/:id',
     name: 'subject',
     component: SubjectRoom,
+    meta: { requiresAuth: true, role: 'student' }
+  },
+  {
+    path: '/student/agents',
+    name: 'agent-selection',
+    component: AgentSelection,
     meta: { requiresAuth: true, role: 'student' }
   },
   {

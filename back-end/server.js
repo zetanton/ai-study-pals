@@ -1,30 +1,32 @@
+require('dotenv').config();
 const express = require('express');
-const { exec } = require('child_process');
-const { sequelize } = require('./models/User'); // Import sequelize instance
-const app = express();
-const port = 3000;
+const cors = require('cors');
+const chatRouter = require('./routes/chat');
+const assignmentsRouter = require('./routes/assignments');
 
-// Middleware
+// Export the app for testing
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(cors());
 app.use(express.json());
 
-// Sync database
-sequelize.sync({ force: true }).then(() => {
-  console.log('Database & tables created!');
+// Mount routes
+app.use('/api', chatRouter);
+app.use('/api', assignmentsRouter);
+
+// Basic error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Endpoint to generate text using vllm
-app.post('/generate', (req, res) => {
-  const prompt = req.body.prompt;
-  exec(`python3 SmolLMService.py "${prompt}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return res.status(500).send('Error generating text');
-    }
-    res.send(stdout);
+// Only start the server if this file is run directly
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
   });
-});
+}
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+module.exports = app;
+

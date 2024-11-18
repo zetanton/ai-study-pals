@@ -1,7 +1,17 @@
 // models/index.js
-const User = require('./User');
-const Medal = require('./Medal');
-const Progress = require('./Progress');
+const { Sequelize } = require('sequelize');
+const UserModel = require('./User');
+const path = require('path');
 
-module.exports = { User, Medal, Progress };
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '..', 'database.sqlite')
+});
+
+const User = UserModel(sequelize);
+
+module.exports = {
+  sequelize,
+  User
+};
 

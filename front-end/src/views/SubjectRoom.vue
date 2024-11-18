@@ -37,7 +37,10 @@
             />
           </div>
 
-          <ChatInput @send="handleSendMessage" />
+          <ChatInput 
+            :is-listening="false"
+            @send="handleSendMessage" 
+          />
         </div>
       </div>
 
@@ -77,7 +80,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { useAgentStore } from '../stores/agents'
 import { useMessageStore } from '../stores/messages'
 import ChatMessage from '../components/ChatMessage.vue'
@@ -104,13 +106,5 @@ const handleSendMessage = (content: string) => {
     content,
     sender: 'user'
   })
-
-  // Simulate agent response
-  setTimeout(() => {
-    messageStore.addMessage(route.params.id as string, {
-      content: `I'm here to help you with ${currentAgent.value?.subject}! What would you like to know?`,
-      sender: 'agent'
-    })
-  }, 1000)
 }
 </script>

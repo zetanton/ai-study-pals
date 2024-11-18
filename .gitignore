@@ -25,5 +25,6 @@
 
    # Build directories
    build/
+   
 node_modules
 .venv/

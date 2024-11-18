@@ -29,6 +29,13 @@
       </p>
     </section>
 
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold text-[#2e3856] mb-4">Meet Our CEO</h2>
+      <p class="text-gray-700 leading-relaxed">
+        Zachary Tanton, our visionary CEO, is dedicated to transforming education through innovative AI solutions. With a passion for technology and a commitment to empowering young learners, Zachary leads AI Study Pals with a focus on creating impactful educational experiences.
+      </p>
+    </section>
+
     <section>
       <h2 class="text-2xl font-semibold text-[#2e3856] mb-4">Join Us</h2>
       <p class="text-gray-700 leading-relaxed">

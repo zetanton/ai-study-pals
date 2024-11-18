@@ -1,7 +1,17 @@
 <template>
   <div class="bg-white rounded-2xl shadow-lg p-6">
     <h3 class="text-xl font-bold text-[#2e3856] mb-4">Previous Assignments</h3>
-    <div v-if="assignments.length > 0" class="space-y-4">
+    <div v-if="loading" class="text-center text-gray-500 py-8">
+      <div class="animate-spin h-8 w-8 mx-auto mb-4 border-4 border-[#00a3ff] border-t-transparent rounded-full"></div>
+      <p>Loading assignments...</p>
+    </div>
+    <div v-else-if="error" class="text-center text-red-500 py-8">
+      <p>{{ error }}</p>
+      <button @click="fetchAssignments" class="text-[#00a3ff] hover:underline mt-2">
+        Try again
+      </button>
+    </div>
+    <div v-else-if="assignments.length > 0" class="space-y-4">
       <div v-for="assignment in assignments" :key="assignment.id" class="bg-[#f7f9fc] rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
         <div class="flex justify-between items-center">
           <div>
@@ -37,18 +47,36 @@ interface Assignment {
 }
 
 const assignments = ref<Assignment[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
 
-onMounted(async () => {
+const fetchAssignments = async () => {
+  loading.value = true
+  error.value = null
   try {
     const response = await fetch('/api/previous-assignments')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
     assignments.value = await response.json()
-  } catch (error) {
-    console.error('Error fetching previous assignments:', error)
+  } catch (err) {
+    console.error('Error fetching previous assignments:', err)
+    error.value = 'Failed to load assignments. Please try again later.'
+  } finally {
+    loading.value = false
   }
+}
+
+onMounted(() => {
+  fetchAssignments()
 })
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  return new Date(dateString).toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })
 }
 
 const getGradeColor = (grade: string) => {

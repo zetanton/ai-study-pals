@@ -70,14 +70,6 @@ const handleSendMessage = (content: string) => {
     content,
     sender: 'user'
   })
-
-  // Simulate agent response
-  setTimeout(() => {
-    messageStore.addMessage(route.params.id as string, {
-      content: `I'm here to help you with ${currentAgent.value?.subject}! What would you like to know?`,
-      sender: 'agent'
-    })
-  }, 1000)
 }
 
 const handleVoiceInput = (transcript: string) => {
