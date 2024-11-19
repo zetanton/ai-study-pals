@@ -1,6 +1,17 @@
 <template>
   <div class="bg-white rounded-2xl shadow-lg p-6">
     <h3 class="text-xl font-bold text-[#2e3856] mb-4">Upload Assignment</h3>
+    
+    <!-- Success message -->
+    <div v-if="showSuccess" class="mb-4 p-4 bg-green-50 text-green-700 rounded-lg">
+      Assignment uploaded successfully!
+    </div>
+
+    <!-- Error message -->
+    <div v-if="error" class="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+      {{ error }}
+    </div>
+
     <div class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
@@ -56,10 +67,11 @@
 
       <button 
         @click="uploadFile" 
-        :disabled="!canUpload"
+        :disabled="!canUpload || isLoading"
         class="w-full px-4 py-2 bg-[#00a3ff] text-white rounded-full font-semibold hover:bg-[#0082cc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Upload Assignment
+        <span v-if="isLoading">Uploading...</span>
+        <span v-else>Upload Assignment</span>
       </button>
     </div>
   </div>
@@ -68,7 +80,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
-// Add prop for subject
 const props = defineProps<{
   defaultSubject?: string
 }>()
@@ -76,6 +87,9 @@ const props = defineProps<{
 const selectedFile = ref<File | null>(null)
 const subject = ref('')
 const grade = ref('')
+const isLoading = ref(false)
+const error = ref('')
+const showSuccess = ref(false)
 
 // Auto-populate subject if defaultSubject is provided
 onMounted(() => {
@@ -85,7 +99,7 @@ onMounted(() => {
 })
 
 const canUpload = computed(() => 
-  selectedFile.value && subject.value && grade.value
+  selectedFile.value && subject.value && grade.value && !isLoading.value
 )
 
 const handleFileUpload = (event: Event) => {
@@ -95,8 +109,14 @@ const handleFileUpload = (event: Event) => {
   }
 }
 
+const emit = defineEmits(['upload-complete'])
+
 const uploadFile = async () => {
   if (!selectedFile.value || !subject.value || !grade.value) return
+  
+  isLoading.value = true
+  error.value = ''
+  showSuccess.value = false
 
   const formData = new FormData()
   formData.append('file', selectedFile.value)
@@ -109,13 +129,20 @@ const uploadFile = async () => {
       body: formData
     })
     const result = await response.json()
-    console.log('Assignment uploaded:', result)
-    // Reset form after successful upload
+    
+    // Reset form
     selectedFile.value = null
-    subject.value = ''
+    subject.value = props.defaultSubject || ''
     grade.value = ''
-  } catch (error) {
-    console.error('Error uploading assignment:', error)
+    
+    showSuccess.value = true
+    // Emit the new assignment data
+    emit('upload-complete', result.assignment)
+  } catch (err) {
+    error.value = 'Failed to upload assignment. Please try again.'
+    console.error('Error uploading:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

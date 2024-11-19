@@ -12,7 +12,7 @@
       </button>
     </div>
     <div v-else-if="assignments.length > 0" class="space-y-4">
-      <div v-for="assignment in assignments" :key="assignment.id" class="bg-[#f7f9fc] rounded-xl p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="showDetails(assignment.id)">
+      <div v-for="assignment in filteredAssignments" :key="assignment.id" class="bg-[#f7f9fc] rounded-xl p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="showDetails(assignment.id)">
         <div class="flex justify-between items-center">
           <div>
             <h4 class="font-semibold text-[#2e3856] text-lg">{{ assignment.name }}</h4>
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AssignmentDetails from './AssignmentDetails.vue'
 
 interface LearningInsight {
@@ -57,16 +57,29 @@ interface LearningInsight {
 interface Assignment {
   id: number;
   name: string;
+  fileName?: string;
   subject: string;
   grade: string;
   submittedDate: string;
   insights: LearningInsight[];
+  createdAt?: string;
 }
+
+const props = defineProps<{
+  subjectFilter?: string
+}>()
 
 const assignments = ref<Assignment[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const selectedAssignmentId = ref<number | null>(null)
+
+const filteredAssignments = computed(() => {
+  if (!props.subjectFilter) return assignments.value
+  return assignments.value.filter(a => 
+    a.subject.toLowerCase() === (props.subjectFilter ?? '').toLowerCase()
+  )
+})
 
 const fetchAssignments = async () => {
   loading.value = true
@@ -111,4 +124,22 @@ const getGradeColor = (grade: string) => {
 const showDetails = (id: number) => {
   selectedAssignmentId.value = id
 }
+
+const addNewAssignment = (newAssignment: Assignment) => {
+  const formattedAssignment = {
+    id: newAssignment.id,
+    name: newAssignment.fileName || 'Untitled Assignment',
+    subject: newAssignment.subject,
+    grade: newAssignment.grade,
+    submittedDate: newAssignment.submittedDate ?? newAssignment.createdAt ?? new Date().toISOString(),
+    insights: newAssignment.insights
+  }
+  
+  assignments.value.unshift(formattedAssignment)
+}
+
+defineExpose({
+  addNewAssignment,
+  fetchAssignments
+})
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer transform hover:-translate-y-1 transition-transform"
+    class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl duration-300 cursor-pointer transform hover:-translate-y-1 transition-transform"
     @click="$emit('click')"
   >
     <div class="relative">

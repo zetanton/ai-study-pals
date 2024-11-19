@@ -52,8 +52,8 @@
       <div>
         <h2 class="text-2xl font-bold text-[#2e3856] mb-4">Assignment Management</h2>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AssignmentUpload />
-          <PreviousAssignments />
+          <AssignmentUpload @upload-complete="handleUploadComplete" />
+          <PreviousAssignments ref="previousAssignmentsRef" />
         </div>
       </div>
     </div>
@@ -72,6 +72,7 @@ const completedLessons = ref(0)
 const earnedMedals = ref(0)
 const averageScore = ref(0)
 const recentActivities = ref<any[]>([])
+const previousAssignmentsRef = ref()
 
 // Create interface for student stats
 interface StudentStats {
@@ -109,4 +110,10 @@ const { isLoading, error, execute: fetchDashboardStats } = useLoadingState(async
 onMounted(() => {
   fetchDashboardStats()
 })
+
+const handleUploadComplete = (newAssignment: any) => {
+  if (previousAssignmentsRef.value) {
+    previousAssignmentsRef.value.addNewAssignment(newAssignment)
+  }
+}
 </script>

@@ -79,10 +79,17 @@
             </div>
           </div>
         </div>
+
+        <AssignmentUpload 
+          :default-subject="getSubjectValue(currentAgent?.subject)"
+          @upload-complete="handleUploadComplete"
+        />
+        <PreviousAssignments 
+          ref="previousAssignmentsRef"
+          :subject-filter="getSubjectValue(currentAgent?.subject)"
+        />
       </div>
     </div>
-
-    <AssignmentUpload :default-subject="currentSubject" />
   </div>
 </template>
 
@@ -95,6 +102,7 @@ import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
 import VoiceInput from '../components/VoiceInput.vue'
 import AssignmentUpload from '../components/AssignmentUpload.vue'
+import PreviousAssignments from '../components/PreviousAssignments.vue'
 
 // Store and route setup
 const route = useRoute()
@@ -146,6 +154,15 @@ const handleTranscript = (text: string) => {
   if (text.trim()) {
     transcribedMessage.value = text
     isListening.value = false
+  }
+}
+
+const previousAssignmentsRef = ref()
+
+const handleUploadComplete = () => {
+  // Trigger re-fetch of assignments
+  if (previousAssignmentsRef.value) {
+    previousAssignmentsRef.value.fetchAssignments()
   }
 }
 </script>

@@ -39,14 +39,20 @@ const outputParser = new JsonOutputFunctionsParser({
 
 // Create a prompt template for document analysis
 const analysisPrompt = PromptTemplate.fromTemplate(`
-You are an educational assessment expert analyzing a student's work.
-Consider the grade {grade} curriculum standards for {subject}.
-Identify key strengths and areas for improvement.
+You are an educational assessment expert specializing in K-6 education. Your task is to analyze a student's work with consideration for their specific grade level and subject matter.
 
-Document content: {text}
+Context:
+- Subject Area: {subject}
+- Assignment Score: {grade}
 
-Relevant curriculum standards: {standards}
+Instructions:
+1. First, determine if the content and concepts in the work are grade-level appropriate based on standard educational benchmarks
+2. Evaluate the work specifically through the lens of grade-level expectations
+3. Consider typical developmental and learning milestones for this age group
+4. Compare the work against the curriculum standards.
+5. Provide feedback that is constructually appropriate for the student's grade level
 
+Document to analyze: {text}
 IMPORTANT: You must respond ONLY with a valid JSON object in the following format, with no additional text before or after:
 {{
   "summary": "Overall assessment summary",

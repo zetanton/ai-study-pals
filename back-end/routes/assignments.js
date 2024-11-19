@@ -77,14 +77,18 @@ router.post('/upload-assignment', upload.single('file'), async (req, res) => {
 
 router.get('/previous-assignments', async (req, res) => {
   try {
+    const { subject } = req.query
+    const whereClause = subject ? { subject: subject.toLowerCase() } : {}
+    
     const assignments = await Assignment.findAll({
+      where: whereClause,
       include: [{
         model: LearningInsight,
         as: 'LearningInsights',
         attributes: ['category', 'strength', 'improvement', 'confidence']
       }],
       order: [['createdAt', 'DESC']]
-    });
+    })
 
     const formattedAssignments = assignments.map(assignment => ({
       id: assignment.id,
@@ -93,14 +97,14 @@ router.get('/previous-assignments', async (req, res) => {
       grade: assignment.grade,
       submittedDate: assignment.createdAt,
       insights: assignment.LearningInsights
-    }));
+    }))
 
-    res.json(formattedAssignments);
+    res.json(formattedAssignments)
   } catch (error) {
-    console.error('Error fetching assignments:', error);
-    res.status(500).json({ error: 'Failed to fetch assignments' });
+    console.error('Error fetching assignments:', error)
+    res.status(500).json({ error: 'Failed to fetch assignments' })
   }
-});
+})
 
 router.get('/assignment/:id', async (req, res) => {
   try {

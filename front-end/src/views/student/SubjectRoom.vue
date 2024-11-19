@@ -33,8 +33,15 @@
       </div>
 
       <div class="lg:col-span-1">
-        <AssignmentUpload :default-subject="getSubjectValue(currentAgent?.subject)" />
-        <PreviousAssignments class="mt-8" />
+        <AssignmentUpload 
+          :default-subject="getSubjectValue(currentAgent?.subject)"
+          @upload-complete="handleUploadComplete"
+        />
+        <PreviousAssignments 
+          ref="previousAssignmentsRef"
+          :subject-filter="getSubjectValue(currentAgent?.subject)"
+          class="mt-8"
+        />
       </div>
     </div>
   </div>
@@ -97,5 +104,13 @@ const getSubjectValue = (subject?: string) => {
     'Social Studies': 'social'
   }
   return subject ? subjectMap[subject] : ''
+}
+
+const previousAssignmentsRef = ref()
+
+const handleUploadComplete = (newAssignment: any) => {
+  if (previousAssignmentsRef.value) {
+    previousAssignmentsRef.value.addNewAssignment(newAssignment)
+  }
 }
 </script>
