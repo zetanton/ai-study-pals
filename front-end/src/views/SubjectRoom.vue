@@ -38,8 +38,15 @@
           </div>
 
           <ChatInput 
-            :is-listening="false"
-            @send="handleSendMessage" 
+            :is-listening="isListening"
+            :transcribed-message="transcribedMessage"
+            @send="handleSendMessage"
+            @toggle-voice="toggleVoiceInput" 
+          />
+          <VoiceInput
+            :is-listening="isListening"
+            @transcript="handleTranscript"
+            @update-listening="updateListeningStatus"
           />
         </div>
       </div>
@@ -78,17 +85,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAgentStore } from '../stores/agents'
 import { useMessageStore } from '../stores/messages'
 import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
+import VoiceInput from '../components/VoiceInput.vue'
 
+// Store and route setup
 const route = useRoute()
 const agentStore = useAgentStore()
 const messageStore = useMessageStore()
 
+// Computed properties for current context
 const currentAgent = computed(() => 
   agentStore.getAgentById(route.params.id as string)
 )
@@ -97,14 +107,42 @@ const messages = computed(() =>
   messageStore.getMessagesByAgentId(route.params.id as string)
 )
 
+// Voice input state management
+const isListening = ref(false)
+const transcribedMessage = ref('')
+
+// Initialize chat on component mount
 onMounted(() => {
   messageStore.initializeChat(route.params.id as string)
 })
 
+// Message handling
 const handleSendMessage = (content: string) => {
+  if (!content.trim()) return
+  
   messageStore.addMessage(route.params.id as string, {
     content,
     sender: 'user'
   })
+  transcribedMessage.value = ''
+}
+
+// Voice input controls
+const toggleVoiceInput = () => {
+  isListening.value = !isListening.value
+  if (!isListening.value) {
+    transcribedMessage.value = ''
+  }
+}
+
+const updateListeningStatus = (status: boolean) => {
+  isListening.value = status
+}
+
+const handleTranscript = (text: string) => {
+  if (text.trim()) {
+    transcribedMessage.value = text
+    isListening.value = false
+  }
 }
 </script>

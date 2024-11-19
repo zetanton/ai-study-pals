@@ -14,6 +14,7 @@
             v-model="email"
             type="email"
             required
+            autocomplete="email"
             class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#00a3ff] focus:ring focus:ring-[#00a3ff] focus:ring-opacity-50"
           >
         </div>
@@ -25,6 +26,7 @@
             v-model="password"
             type="password"
             required
+            autocomplete="current-password"
             class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#00a3ff] focus:ring focus:ring-[#00a3ff] focus:ring-opacity-50"
           >
         </div>

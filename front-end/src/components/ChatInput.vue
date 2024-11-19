@@ -10,7 +10,7 @@
       >
       <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex">
         <button
-          @click="$emit('toggleVoice')"
+          @click="toggleVoice"
           class="mr-2 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00a3ff]"
           :class="{ 'bg-red-500 text-white hover:bg-red-600': isListening }"
         >
@@ -30,22 +30,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+
+// Props and emits with clear typing
+const props = defineProps<{
+  isListening: boolean,
+  transcribedMessage?: string
+}>()
 
 const emit = defineEmits<{
   (e: 'send', message: string): void
   (e: 'toggleVoice'): void
 }>()
 
-const props = defineProps<{
-  isListening: boolean
-}>()
-
+// State management
 const messageText = ref('')
 
+// Watch for transcribed message updates
+watch(() => props.transcribedMessage, (newValue) => {
+  if (newValue) {
+    messageText.value = newValue
+  }
+}, { immediate: true })
+
+// Message handling
 const sendMessage = () => {
-  if (!messageText.value.trim()) return
-  emit('send', messageText.value)
+  const trimmedMessage = messageText.value.trim()
+  if (!trimmedMessage) return
+  
+  emit('send', trimmedMessage)
   messageText.value = ''
+}
+
+const toggleVoice = () => {
+  emit('toggleVoice')
 }
 </script>
