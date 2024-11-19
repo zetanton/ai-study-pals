@@ -8,7 +8,7 @@ const sequelize = new Sequelize({
   storage: path.join(__dirname, '..', 'database.sqlite')
 });
 
-const User = UserModel(sequelize);
+const User = new UserModel(sequelize);
 
 module.exports = {
   sequelize,

@@ -81,6 +81,8 @@
         </div>
       </div>
     </div>
+
+    <AssignmentUpload :default-subject="currentSubject" />
   </div>
 </template>
 
@@ -92,6 +94,7 @@ import { useMessageStore } from '../stores/messages'
 import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
 import VoiceInput from '../components/VoiceInput.vue'
+import AssignmentUpload from '../components/AssignmentUpload.vue'
 
 // Store and route setup
 const route = useRoute()

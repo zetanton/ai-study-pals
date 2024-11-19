@@ -12,7 +12,7 @@
       </button>
     </div>
     <div v-else-if="assignments.length > 0" class="space-y-4">
-      <div v-for="assignment in assignments" :key="assignment.id" class="bg-[#f7f9fc] rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
+      <div v-for="assignment in assignments" :key="assignment.id" class="bg-[#f7f9fc] rounded-xl p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer" @click="showDetails(assignment.id)">
         <div class="flex justify-between items-center">
           <div>
             <h4 class="font-semibold text-[#2e3856] text-lg">{{ assignment.name }}</h4>
@@ -33,22 +33,40 @@
       <h3 class="mt-2 text-sm font-medium text-gray-900">No assignments</h3>
       <p class="mt-1 text-sm text-gray-500">Get started by uploading your first assignment.</p>
     </div>
+
+    <AssignmentDetails 
+      v-if="selectedAssignmentId"
+      :show="!!selectedAssignmentId"
+      :assignment-id="selectedAssignmentId"
+      @close="selectedAssignmentId = null"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import AssignmentDetails from './AssignmentDetails.vue'
+
+interface LearningInsight {
+  category: string;
+  strength: string;
+  improvement: string;
+  confidence: number;
+}
 
 interface Assignment {
-  id: number
-  name: string
-  grade: string
-  submittedDate: string
+  id: number;
+  name: string;
+  subject: string;
+  grade: string;
+  submittedDate: string;
+  insights: LearningInsight[];
 }
 
 const assignments = ref<Assignment[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const selectedAssignmentId = ref<number | null>(null)
 
 const fetchAssignments = async () => {
   loading.value = true
@@ -80,10 +98,17 @@ const formatDate = (dateString: string) => {
 }
 
 const getGradeColor = (grade: string) => {
-  const numericGrade = parseFloat(grade)
-  if (numericGrade >= 90) return 'bg-green-100 text-green-800'
-  if (numericGrade >= 80) return 'bg-blue-100 text-blue-800'
-  if (numericGrade >= 70) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
+  const colors = {
+    'A': 'bg-green-100 text-green-800',
+    'B': 'bg-blue-100 text-blue-800',
+    'C': 'bg-yellow-100 text-yellow-800',
+    'D': 'bg-orange-100 text-orange-800',
+    'F': 'bg-red-100 text-red-800'
+  };
+  return colors[grade as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+}
+
+const showDetails = (id: number) => {
+  selectedAssignmentId.value = id
 }
 </script>

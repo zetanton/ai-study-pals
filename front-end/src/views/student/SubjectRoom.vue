@@ -29,11 +29,11 @@
             @transcript="handleVoiceInput"
             @update-listening="updateListeningStatus"
           />
-        </div>
+        </div> 
       </div>
 
-      <div>
-        <AssignmentUpload />
+      <div class="lg:col-span-1">
+        <AssignmentUpload :default-subject="getSubjectValue(currentAgent?.subject)" />
         <PreviousAssignments class="mt-8" />
       </div>
     </div>
@@ -86,5 +86,16 @@ const updateListeningStatus = (status: boolean) => {
 
 const clearChat = () => {
   messageStore.clearMessages(route.params.id as string)
+}
+
+const getSubjectValue = (subject?: string) => {
+  const subjectMap: Record<string, string> = {
+    'Mathematics': 'math',
+    'Science': 'science',
+    'English Language Arts': 'english',
+    'History': 'history',
+    'Social Studies': 'social'
+  }
+  return subject ? subjectMap[subject] : ''
 }
 </script>

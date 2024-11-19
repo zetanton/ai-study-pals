@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
 const chatRouter = require('./routes/chat');
@@ -14,6 +15,7 @@ app.use(express.json());
 // Mount routes
 app.use('/api', chatRouter);
 app.use('/api', assignmentsRouter);
+app.use('/api/assignments', assignmentsRouter);
 
 // Basic error handler
 app.use((err, req, res, next) => {

@@ -2,6 +2,41 @@
   <div class="bg-white rounded-2xl shadow-lg p-6">
     <h3 class="text-xl font-bold text-[#2e3856] mb-4">Upload Assignment</h3>
     <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="subject" class="block text-sm font-medium text-gray-700">Subject</label>
+          <select
+            id="subject"
+            v-model="subject"
+            required
+            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#00a3ff] focus:ring focus:ring-[#00a3ff] focus:ring-opacity-50"
+          >
+            <option value="">Select Subject</option>
+            <option value="math">Mathematics</option>
+            <option value="science">Science</option>
+            <option value="english">English</option>
+            <option value="history">History</option>
+            <option value="social">Social Studies</option>
+          </select>
+        </div>
+        <div>
+          <label for="grade" class="block text-sm font-medium text-gray-700">Grade</label>
+          <select
+            id="grade"
+            v-model="grade"
+            required
+            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#00a3ff] focus:ring focus:ring-[#00a3ff] focus:ring-opacity-50"
+          >
+            <option value="">Select Grade</option>
+            <option value="A">A (90-100)</option>
+            <option value="B">B (80-89)</option>
+            <option value="C">C (70-79)</option>
+            <option value="D">D (60-69)</option>
+            <option value="F">F (Below 60)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="flex items-center justify-center w-full">
         <label for="file-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
           <div class="flex flex-col items-center justify-center pt-5 pb-6">
@@ -14,12 +49,14 @@
           <input id="file-upload" type="file" class="hidden" @change="handleFileUpload" accept=".pdf,.doc,.docx" />
         </label>
       </div>
+
       <div v-if="selectedFile" class="text-sm text-gray-500">
         Selected file: {{ selectedFile.name }}
       </div>
+
       <button 
         @click="uploadFile" 
-        :disabled="!selectedFile"
+        :disabled="!canUpload"
         class="w-full px-4 py-2 bg-[#00a3ff] text-white rounded-full font-semibold hover:bg-[#0082cc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Upload Assignment
@@ -29,9 +66,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+
+// Add prop for subject
+const props = defineProps<{
+  defaultSubject?: string
+}>()
 
 const selectedFile = ref<File | null>(null)
+const subject = ref('')
+const grade = ref('')
+
+// Auto-populate subject if defaultSubject is provided
+onMounted(() => {
+  if (props.defaultSubject) {
+    subject.value = props.defaultSubject
+  }
+})
+
+const canUpload = computed(() => 
+  selectedFile.value && subject.value && grade.value
+)
 
 const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -41,10 +96,12 @@ const handleFileUpload = (event: Event) => {
 }
 
 const uploadFile = async () => {
-  if (!selectedFile.value) return
+  if (!selectedFile.value || !subject.value || !grade.value) return
 
   const formData = new FormData()
   formData.append('file', selectedFile.value)
+  formData.append('subject', subject.value)
+  formData.append('grade', grade.value)
 
   try {
     const response = await fetch('/api/upload-assignment', {
@@ -53,11 +110,12 @@ const uploadFile = async () => {
     })
     const result = await response.json()
     console.log('Assignment uploaded:', result)
-    // Handle successful upload (e.g., show success message, update UI)
-    selectedFile.value = null // Reset the file input after successful upload
+    // Reset form after successful upload
+    selectedFile.value = null
+    subject.value = ''
+    grade.value = ''
   } catch (error) {
     console.error('Error uploading assignment:', error)
-    // Handle error (e.g., show error message)
   }
 }
 </script>
