@@ -2,23 +2,49 @@
 const sequelize = require('./config/database');
 const User = require('./models/User');
 const { Assignment, LearningInsight } = require('./models/Assignment');
+const bcrypt = require('bcrypt');
+
+async function hashPassword(password) {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
+}
 
 async function initDatabase() {
     try {
-        // First sync all models with the database
+        // Sync all models with the database
         await sequelize.sync({ force: true });
         console.log('Database synced');
         
-        // Create test user
-        const user = await User.create({
-            username: 'zetanton@gmail.com',
-            password: 'password123' // Remember to hash passwords in production
-        });
-        console.log('Test user created');
+        // Create test users for each role
+        const testUsers = await User.bulkCreate([
+            {
+                email: 'student@test.com',
+                password: await hashPassword('password123'),
+                name: 'Test Student',
+                role: 'student',
+                subscription: 'basic'
+            },
+            {
+                email: 'parent@test.com',
+                password: await hashPassword('password123'),
+                name: 'Test Parent',
+                role: 'parent',
+                subscription: 'premium'
+            },
+            {
+                email: 'educator@test.com',
+                password: await hashPassword('password123'),
+                name: 'Test Educator',
+                role: 'educator',
+                subscription: 'premium'
+            }
+        ]);
+        console.log('Test users created');
 
-        // Create sample assignment
+        // Create sample assignment for the student
+        const studentUser = testUsers.find(user => user.role === 'student');
         const assignment = await Assignment.create({
-            userId: user.id,
+            userId: studentUser.id,
             subject: 'Mathematics',
             grade: 'A',
             fileName: 'sample_math_homework.pdf',
@@ -32,7 +58,7 @@ async function initDatabase() {
             category: 'Problem Solving',
             strength: 'Shows good understanding of basic operations',
             improvement: 'Could work on showing detailed work steps',
-            confidence: 0.85
+            confidence: 85
         });
         console.log('Sample learning insight created');
 
@@ -43,14 +69,18 @@ async function initDatabase() {
     }
 }
 
-// Execute initialization
-initDatabase()
-    .then(() => {
-        console.log('Database initialization complete');
-        process.exit(0);
-    })
-    .catch((error) => {
-        console.error('Failed to initialize database:', error);
-        process.exit(1);
-    });
+// Execute if this file is run directly
+if (require.main === module) {
+    initDatabase()
+        .then(() => {
+            console.log('Database initialization completed');
+            process.exit(0);
+        })
+        .catch(error => {
+            console.error('Database initialization failed:', error);
+            process.exit(1);
+        });
+}
+
+module.exports = initDatabase;
 

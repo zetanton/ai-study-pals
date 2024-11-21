@@ -1,16 +1,20 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold text-[#2e3856]">Student Dashboard</h1>
-      <RouterLink 
-        to="/student/agents" 
-        class="btn-primary flex items-center space-x-2"
-      >
-        <span>Study with AI Pals</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </RouterLink>
+      <div>
+        <h1 class="text-3xl font-bold text-[#2e3856]">Student Dashboard</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <RouterLink 
+          to="/profile" 
+          class="btn-secondary flex items-center space-x-2"
+        >
+          <span>Profile Settings</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+          </svg>
+        </RouterLink>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -66,6 +70,9 @@ import { RouterLink } from 'vue-router'
 import AssignmentUpload from '../../components/AssignmentUpload.vue'
 import PreviousAssignments from '../../components/PreviousAssignments.vue'
 import { useLoadingState } from '../../composables/useLoadingState'
+import { storeToRefs } from 'pinia'
+import { useAuthStore } from '../../stores/auth'
+import { useRouter } from 'vue-router'
 
 // Add missing refs
 const completedLessons = ref(0)
@@ -104,6 +111,17 @@ const { isLoading, error, execute: fetchDashboardStats } = useLoadingState(async
   } catch (err) {
     console.error('Failed to fetch dashboard stats:', err)
     throw err
+  }
+})
+
+const authStore = useAuthStore()
+const { user } = storeToRefs(authStore)
+const router = useRouter()
+
+// Add authorization check
+onMounted(() => {
+  if (user.value?.role !== 'student') {
+    router.push('/unauthorized')
   }
 })
 

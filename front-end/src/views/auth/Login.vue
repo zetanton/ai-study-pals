@@ -97,7 +97,7 @@ const loading = ref(false)
 const handleSubmit = async () => {
   loading.value = true
   try {
-    await authStore.login(email.value, password.value)
+    await authStore.login({ email: email.value, password: password.value })
     const role = authStore.user?.role
     router.push(`/${role}`)
   } catch (error) {

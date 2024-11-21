@@ -16,6 +16,7 @@ app.use(express.json());
 app.use('/api', chatRouter);
 app.use('/api', assignmentsRouter);
 app.use('/api/assignments', assignmentsRouter);
+app.use('/api/auth', require('./routes/auth'));
 
 // Basic error handler
 app.use((err, req, res, next) => {

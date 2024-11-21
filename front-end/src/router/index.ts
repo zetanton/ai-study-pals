@@ -78,6 +78,12 @@ const routes = [
     name: 'educator',
     component: EducatorDashboard,
     meta: { requiresAuth: true, role: 'educator' }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/Profile.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

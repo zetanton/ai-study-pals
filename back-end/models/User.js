@@ -7,13 +7,29 @@ const User = sequelize.define('User', {
     primaryKey: true,
     autoIncrement: true
   },
-  username: {
+  email: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  role: {
+    type: DataTypes.ENUM('student', 'parent', 'educator'),
+    allowNull: false
+  },
+  subscription: {
+    type: DataTypes.ENUM('free', 'basic', 'premium'),
+    defaultValue: 'free'
   }
 });
 
