@@ -3,6 +3,7 @@ const sequelize = require('./config/database');
 const User = require('./models/User');
 const { Assignment, LearningInsight } = require('./models/Assignment');
 const bcrypt = require('bcrypt');
+const ConversationHistory = require('./models/ConversationHistory');
 
 async function hashPassword(password) {
     const saltRounds = 10;
@@ -23,6 +24,13 @@ async function initDatabase() {
                 name: 'Test Student',
                 role: 'student',
                 subscription: 'basic'
+            },
+            {
+                email: 'student2@test.com',
+                password: await hashPassword('password123'),
+                name: 'Test Student',
+                role: 'student',
+                subscription: 'premium'
             },
             {
                 email: 'parent@test.com',
@@ -61,6 +69,8 @@ async function initDatabase() {
             confidence: 85
         });
         console.log('Sample learning insight created');
+
+        await ConversationHistory.sync();
 
         console.log('Database initialized with sample data');
     } catch (error) {

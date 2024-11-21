@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { ChatGroq } = require("@langchain/groq");
 const { ConversationChain } = require("langchain/chains");
-const { BufferMemory } = require("langchain/memory");
 const { ChatPromptTemplate, MessagesPlaceholder } = require("@langchain/core/prompts");
-
-// Store conversation chains for each user-agent pair
-const conversationChains = new Map();
+const SequelizeMemory = require('../services/SequelizeMemory');
+const ConversationHistory = require('../models/ConversationHistory');
+const { Op } = require('sequelize');
+const sequelize = require('sequelize');
 
 // Keep existing agent prompts
 const agentPrompts = {
@@ -21,19 +21,168 @@ const agentPrompts = {
   social: `You are Mr. Sam, a friendly and approachable social studies teacher for elementary school students (grades K-6). You help students understand their community, basic civics, different cultures, and geography. Make social studies relatable through real-world examples and engaging explanations. If asked about other subjects, kindly redirect students to the appropriate subject teacher. Avoid answering questions about non-social subjects.`
 }
 
-// Function to get or create a conversation chain
-function getConversationChain(userId, agentId) {
-  const chainKey = `${userId}-${agentId}`;
-  
-  if (!agentPrompts[agentId]) {
-    throw new Error(`Invalid agent ID: ${agentId}`);
-  }
-  
-  if (!conversationChains.has(chainKey)) {
-    try {
-      const prompt = ChatPromptTemplate.fromMessages([
-        ["system", `${agentPrompts[agentId]}
+// Get all sessions for an agent
+router.get('/chat/sessions/:agentId', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const { userId } = req.query;
 
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Get the latest non-default title for each session
+    const conversations = await ConversationHistory.findAll({
+      where: { 
+        sessionId: {
+          [Op.startsWith]: `${userId}-${agentId}-`
+        },
+        title: {
+          [Op.and]: {
+            [Op.not]: null,
+            [Op.ne]: '',
+            [Op.ne]: '💭 New Discussion'
+          }
+        }
+      },
+      attributes: [
+        'sessionId',
+        'createdAt',
+        [sequelize.fn('MAX', sequelize.col('title')), 'title'],
+        'content'
+      ],
+      group: ['sessionId', 'createdAt', 'content'],
+      order: [['createdAt', 'DESC']],
+      raw: true
+    });
+
+    const sessions = conversations.map(conv => ({
+      id: conv.sessionId,
+      createdAt: conv.createdAt,
+      title: conv.title || 'Untitled Discussion',
+      preview: conv.content.substring(0, 50) + '...'
+    }));
+
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+});
+
+// Get messages for a specific session
+router.get('/chat/messages/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Verify session belongs to user
+    if (!sessionId.startsWith(`${userId}-`)) {
+      return res.status(403).json({ error: 'Unauthorized access to session' });
+    }
+    
+    // First get the latest non-default title for this session
+    const latestTitle = await ConversationHistory.findOne({
+      where: { 
+        sessionId,
+        title: {
+          [Op.and]: {
+            [Op.not]: null,
+            [Op.ne]: '',
+            [Op.ne]: '💭 New Discussion',
+            [Op.ne]: 'Untitled Discussion'
+          }
+        }
+      },
+      order: [['createdAt', 'DESC']],
+      attributes: ['title'],
+      raw: true
+    });
+
+    const messages = await ConversationHistory.findAll({
+      where: { sessionId },
+      order: [['createdAt', 'ASC']],
+      attributes: ['id', 'content', ['role', 'sender'], 'createdAt'],
+      raw: true
+    });
+
+    const firstMessage = messages[0];
+    
+    res.json({
+      id: sessionId,
+      date: firstMessage?.createdAt || new Date().toISOString(),
+      title: latestTitle?.title || 'Untitled Discussion',
+      messages: messages.map(m => ({
+        id: m.id,
+        content: m.content,
+        sender: m.role === 'human' ? 'user' : 'agent'
+      })),
+      preview: firstMessage?.content.substring(0, 50) + '...' || 'Empty conversation'
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Create a new session
+router.post('/chat/sessions', async (req, res) => {
+  try {
+    const { agentId, userId } = req.body;
+    
+    if (!agentId || !userId) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const sessionId = `${userId}-${agentId}-${Date.now()}`;
+    const initialTitle = '💭 New Discussion';
+
+    const newMessage = await ConversationHistory.create({
+      sessionId,
+      role: 'assistant',
+      content: 'Hello! How can I help you today?',
+      title: initialTitle
+    });
+
+    res.json({
+      session: {
+        id: sessionId,
+        createdAt: newMessage.createdAt,
+        preview: 'Hello! How can I help you today?',
+        title: initialTitle
+      }
+    });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(500).json({ error: 'Failed to create session' });
+  }
+});
+
+// Modify your chat endpoint to use SequelizeMemory
+router.post('/chat', async (req, res) => {
+  try {
+    const { message, agentId, userId, sessionId } = req.body;
+
+    if (!message || message.trim() === '') {
+      return res.status(400).json({ error: 'Message cannot be empty' });
+    }
+
+    if (!userId || !agentId || !sessionId) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    if (!agentPrompts[agentId]) {
+      return res.status(400).json({ error: 'Invalid agent ID' });
+    }
+
+    const memory = new SequelizeMemory(sessionId);
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", `${agentPrompts[agentId]}
         Format your responses using markdown for better readability:
         - Use **bold** for emphasis
         - Use bullet points for lists
@@ -42,71 +191,78 @@ function getConversationChain(userId, agentId) {
         - Use ### for section headers
         
         Keep responses clear, engaging, and well-structured for elementary students.`],
-        new MessagesPlaceholder("history"),
-        ["human", "{input}"],
-      ]);
+      new MessagesPlaceholder("history"),
+      ["human", "{input}"],
+    ]);
 
-      const memory = new BufferMemory({
-        returnMessages: true,
-        memoryKey: "history",
-      });
+    const chainModel = new ChatGroq({
+      apiKey: process.env.GROQ_API_KEY,
+      modelName: "llama3-8b-8192",
+      configuration: {
+        model: "llama3-8b-8192",
+      }
+    });
 
-      // Create the model instance with explicit configuration
-      const chainModel = new ChatGroq({
-        apiKey: process.env.GROQ_API_KEY,
-        modelName: "llama3-8b-8192",  // Explicitly set model name here
-        configuration: {
-          model: "llama3-8b-8192",  // Set it in configuration as well
-        }
-      });
+    const chain = new ConversationChain({
+      memory,
+      prompt,
+      llm: chainModel,
+    });
 
-      const chain = new ConversationChain({
-        memory,
-        prompt,
+    const existingMessages = await ConversationHistory.findAll({
+      where: { sessionId },
+      order: [['createdAt', 'ASC']]
+    });
+
+    let updatedTitle = null;
+    if (existingMessages.length === 1) { // Only the initial greeting
+      const titlePrompt = `Based on this first message from a student: "${message}", 
+        generate a very brief (2-4 words) title that starts with a relevant emoji.
+        For example:
+        - "🌍 Earth's Atmosphere"
+        - "🧮 Adding Fractions"
+        - "📚 Story Elements"
+        - "⚔️ Ancient Rome"
+        - "🗺️ World Cultures"
+        Response should be ONLY the title with emoji, nothing else.`;
+
+      const titleChain = new ConversationChain({
+        prompt: ChatPromptTemplate.fromTemplate(titlePrompt),
         llm: chainModel,
       });
 
-      conversationChains.set(chainKey, chain);
-    } catch (error) {
-      console.error('Error creating conversation chain:', error);
-      throw error;
-    }
-  }
+      const titleResponse = await titleChain.call({ input: message });
+      const title = titleResponse.response.trim();
 
-  return conversationChains.get(chainKey);
-}
+      // Update all messages in this session with the new title
+      await ConversationHistory.update(
+        { title },
+        { 
+          where: { sessionId },
+          silent: true
+        }
+      );
 
-router.post('/chat', async (req, res) => {
-  try {
-    const { message, agentId, userId } = req.body;
-
-    if (!message || message.trim() === '') {
-      return res.status(400).json({ error: 'Message cannot be empty' });
+      updatedTitle = title;
     }
 
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
+    // After the first user message, generate a title
+    if (message && sessionId) {
+      const response = await chain.call({ input: message });
+      
+      // Save the assistant's response to the conversation history
+      await ConversationHistory.create({
+        sessionId,
+        role: 'assistant',
+        content: response.response,
+        title: existingMessages[0]?.title
+      });
+
+      res.json({ 
+        content: response.response,
+        updatedTitle: updatedTitle
+      });
     }
-
-    if (!agentId) {
-      return res.status(400).json({ error: 'Agent ID is required' });
-    }
-
-    if (!agentPrompts[agentId]) {
-      return res.status(400).json({ error: 'Invalid agent ID' });
-    }
-
-    const chain = getConversationChain(userId, agentId);
-    
-    console.log('Attempting chat completion with:', {
-      userId,
-      agentId,
-      messageLength: message.length
-    });
-
-    const response = await chain.call({ input: message });
-
-    res.json({ content: response.response });
   } catch (error) {
     console.error('Error in chat completion:', error);
     res.status(500).json({ 
@@ -116,12 +272,13 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// Optional: Add endpoint to clear conversation history
+// Modify your clear endpoint to use SequelizeMemory
 router.post('/chat/clear', async (req, res) => {
   try {
     const { userId, agentId } = req.body;
-    const chainKey = `${userId}-${agentId}`;
-    conversationChains.delete(chainKey);
+    const sessionId = `${userId}-${agentId}`;
+    const memory = new SequelizeMemory(sessionId);
+    await memory.clear();
     res.json({ message: 'Conversation history cleared' });
   } catch (error) {
     console.error('Error clearing conversation:', error);

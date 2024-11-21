@@ -1,31 +1,30 @@
-   # Node.js
-   node_modules/
-   dist/
-   .vite/
-   *.log
+# Dependencies
+node_modules/
+.pnpm-store/
 
-   # Python
-   __pycache__/
-   *.pyc
+# Build
+dist/
+build/
+.vite/
 
-   # Environment variables
-   .env
-
-   # IDEs and editors
-   .vscode/
-   .idea/
-
-   # MacOS
-   .DS_Store
-
-   # Logs
-   npm-debug.log*
-   yarn-debug.log*
-   yarn-error.log*
-
-   # Build directories
-   build/
-   
-node_modules
-.venv/
+# Environment
 .env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
