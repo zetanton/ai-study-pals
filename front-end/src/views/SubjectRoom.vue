@@ -157,6 +157,10 @@ const handleTranscript = (text: string) => {
   }
 }
 
+const getSubjectValue = (subject: string | undefined): string => {
+  return subject?.toLowerCase() ?? ''
+}
+
 const previousAssignmentsRef = ref()
 
 const handleUploadComplete = () => {
