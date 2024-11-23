@@ -1,96 +1,101 @@
 // initDatabase.js
 const sequelize = require('./config/database');
-const User = require('./models/User');
+const { User, StudentParent, StudentEducator } = require('./models/User');
 const { Assignment, LearningInsight } = require('./models/Assignment');
 const bcrypt = require('bcrypt');
-const ConversationHistory = require('./models/ConversationHistory');
 
-async function hashPassword(password) {
-    const saltRounds = 10;
-    return await bcrypt.hash(password, saltRounds);
+async function generateStudentCode() {
+  console.log('Starting student code generation');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code;
+  let attempts = 0;
+  do {
+    attempts++;
+    code = Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    console.log(`Generated code attempt ${attempts}: ${code}`);
+    const existing = await User.findOne({ where: { studentCode: code }});
+    if (!existing) {
+      console.log(`Successfully generated unique student code: ${code}`);
+      return code;
+    }
+    console.log(`Code ${code} already exists, trying again`);
+  } while (true);
 }
 
 async function initDatabase() {
-    try {
-        // Sync all models with the database
-        await sequelize.sync({ force: true });
-        console.log('Database synced');
-        
-        // Create test users for each role
-        const testUsers = await User.bulkCreate([
-            {
-                email: 'student@test.com',
-                password: await hashPassword('password123'),
-                name: 'Test Student',
-                role: 'student',
-                subscription: 'basic'
-            },
-            {
-                email: 'student2@test.com',
-                password: await hashPassword('password123'),
-                name: 'Test Student',
-                role: 'student',
-                subscription: 'premium'
-            },
-            {
-                email: 'parent@test.com',
-                password: await hashPassword('password123'),
-                name: 'Test Parent',
-                role: 'parent',
-                subscription: 'premium'
-            },
-            {
-                email: 'educator@test.com',
-                password: await hashPassword('password123'),
-                name: 'Test Educator',
-                role: 'educator',
-                subscription: 'premium'
-            }
-        ]);
-        console.log('Test users created');
+  console.log('Starting database initialization');
+  try {
+    console.log('Syncing database with force option...');
+    await sequelize.sync({ force: true });
+    console.log('Database sync completed successfully');
+    
+    // Create test users with relationships
+    console.log('Creating test educator account...');
+    const educator = await User.create({
+      email: 'educator@test.com',
+      password: await bcrypt.hash('password123', 10),
+      name: 'Test Educator',
+      role: 'educator',
+      subscription: 'premium',
+      licenseLimit: 50
+    });
+    console.log(`Educator account created with ID: ${educator.id}`);
 
-        // Create sample assignment for the student
-        const studentUser = testUsers.find(user => user.role === 'student');
-        const assignment = await Assignment.create({
-            userId: studentUser.id,
-            subject: 'Mathematics',
-            grade: 'A',
-            fileName: 'sample_math_homework.pdf',
-            fileContent: Buffer.from('Sample content')
-        });
-        console.log('Sample assignment created');
+    console.log('Creating test parent account...');
+    const parent = await User.create({
+      email: 'parent@test.com',
+      password: await bcrypt.hash('password123', 10),
+      name: 'Test Parent',
+      role: 'parent',
+      subscription: 'premium'
+    });
+    console.log(`Parent account created with ID: ${parent.id}`);
 
-        // Create sample learning insight
-        await LearningInsight.create({
-            assignmentId: assignment.id,
-            category: 'Problem Solving',
-            strength: 'Shows good understanding of basic operations',
-            improvement: 'Could work on showing detailed work steps',
-            confidence: 85
-        });
-        console.log('Sample learning insight created');
+    console.log('Creating test student account...');
+    const student = await User.create({
+      email: 'student@test.com',
+      password: await bcrypt.hash('password123', 10),
+      name: 'Test Student',
+      role: 'student',
+      subscription: 'basic',
+      studentCode: await generateStudentCode()
+    });
+    console.log(`Student account created with ID: ${student.id}`);
 
-        await ConversationHistory.sync();
+    // Create relationships
+    console.log('Creating student-parent relationship...');
+    await StudentParent.create({
+      studentId: student.id,
+      parentId: parent.id
+    });
+    console.log(`Student-parent relationship created: Student ${student.id} - Parent ${parent.id}`);
 
-        console.log('Database initialized with sample data');
-    } catch (error) {
-        console.error('Error initializing database:', error);
-        throw error;
-    }
+    console.log('Creating student-educator relationship...');
+    await StudentEducator.create({
+      studentId: student.id,
+      educatorId: educator.id
+    });
+    console.log(`Student-educator relationship created: Student ${student.id} - Educator ${educator.id}`);
+
+    console.log('Database initialization completed successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    console.error('Stack trace:', error.stack);
+    throw error;
+  }
 }
 
-// Execute if this file is run directly
+module.exports = { initDatabase };
+
 if (require.main === module) {
-    initDatabase()
-        .then(() => {
-            console.log('Database initialization completed');
-            process.exit(0);
-        })
-        .catch(error => {
-            console.error('Database initialization failed:', error);
-            process.exit(1);
-        });
+  initDatabase()
+    .then(() => {
+      console.log('Database initialization script completed');
+      process.exit(0);
+    })
+    .catch(error => {
+      console.error('Database initialization failed:', error);
+      process.exit(1);
+    });
 }
-
-module.exports = initDatabase;
 

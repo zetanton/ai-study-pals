@@ -4,6 +4,10 @@ const express = require('express');
 const cors = require('cors');
 const chatRouter = require('./routes/chat');
 const assignmentsRouter = require('./routes/assignments');
+const relationshipsRouter = require('./routes/relationships');
+const includeRelations = require('./middleware/includeRelations');
+const auth = require('./middleware/auth');
+const dashboardRouter = require('./routes/dashboard');
 
 // Export the app for testing
 const app = express();
@@ -17,6 +21,8 @@ app.use('/api', chatRouter);
 app.use('/api', assignmentsRouter);
 app.use('/api/assignments', assignmentsRouter);
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api', relationshipsRouter);
+app.use('/api/dashboard', [auth, includeRelations], dashboardRouter);
 
 // Basic error handler
 app.use((err, req, res, next) => {

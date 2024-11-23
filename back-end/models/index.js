@@ -1,6 +1,6 @@
 // models/index.js
 const { Sequelize } = require('sequelize');
-const UserModel = require('./User');
+const { User, StudentParent, StudentEducator } = require('./User');
 const path = require('path');
 
 const sequelize = new Sequelize({
@@ -8,10 +8,10 @@ const sequelize = new Sequelize({
   storage: path.join(__dirname, '..', 'database.sqlite')
 });
 
-const User = new UserModel(sequelize);
-
 module.exports = {
   sequelize,
-  User
+  User,
+  StudentParent,
+  StudentEducator
 };
 
