@@ -17,14 +17,27 @@
             </svg>
           </RouterLink>
           <button class="btn-secondary">Export Report</button>
-          <button class="btn-primary">Add Student</button>
+          <button 
+            @click="showAddModal = true"
+            class="btn-primary"
+            :disabled="!canAddMoreStudents"
+          >
+            Add Student
+          </button>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-[#f7f9fc] rounded-xl p-6">
-          <div class="text-3xl font-bold text-[#00a3ff]">25</div>
-          <div class="text-gray-600">Total Students</div>
+          <div class="text-3xl font-bold text-[#00a3ff]">
+            {{ students.length }}
+          </div>
+          <div class="text-gray-600">
+            Total Students
+            <span v-if="licenseLimit" class="text-sm text-gray-400">
+              ({{ licenseLimit }} max)
+            </span>
+          </div>
         </div>
         <div class="bg-[#f7f9fc] rounded-xl p-6">
           <div class="text-3xl font-bold text-[#00a3ff]">87%</div>
@@ -45,7 +58,9 @@
       <div class="lg:col-span-2">
         <div class="bg-white rounded-2xl shadow-lg p-6">
           <h2 class="text-xl font-bold text-[#2e3856] mb-4">Student Performance</h2>
-          <div class="space-y-4">
+          <div v-if="loading" class="text-center py-8">Loading...</div>
+          <div v-else-if="error" class="text-center text-red-500 py-8">{{ error }}</div>
+          <div v-else class="space-y-4">
             <div v-for="student in students" :key="student.id" class="p-4 bg-[#f7f9fc] rounded-xl">
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center space-x-3">
@@ -55,19 +70,8 @@
                   <span class="font-semibold text-[#2e3856]">{{ student.name }}</span>
                 </div>
                 <div class="flex items-center space-x-4">
-                  <span class="text-[#00a3ff]">{{ student.score }}%</span>
-                  <button class="text-gray-500 hover:text-[#00a3ff]">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </button>
+                  <span class="text-sm text-gray-500">Code: {{ student.studentCode }}</span>
                 </div>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  class="bg-[#00a3ff] h-2 rounded-full" 
-                  :style="{ width: `${student.score}%` }"
-                ></div>
               </div>
             </div>
           </div>
@@ -108,33 +112,48 @@
         </div>
       </div>
     </div>
+
+    <AddStudentModal
+      :show="showAddModal"
+      @close="showAddModal = false"
+      @student-added="handleStudentAdded"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../../stores/auth'
 import { useRouter } from 'vue-router'
+import { useEducatorStudents } from '../../composables/useEducatorStudents'
+import AddStudentModal from '../../components/AddStudentModal.vue'
 
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
 const router = useRouter()
+const showAddModal = ref(false)
 
-// Add authorization check
-onMounted(() => {
+const {
+  students,
+  loading,
+  error,
+  licenseLimit,
+  canAddMoreStudents,
+  fetchStudents
+} = useEducatorStudents()
+
+onMounted(async () => {
   if (user.value?.role !== 'educator') {
     router.push('/unauthorized')
+    return
   }
+  await fetchStudents()
 })
 
-const students = [
-  { id: 1, name: 'Alice Johnson', score: 92 },
-  { id: 2, name: 'Bob Smith', score: 85 },
-  { id: 3, name: 'Carol Williams', score: 78 },
-  { id: 4, name: 'David Brown', score: 95 },
-  { id: 5, name: 'Emma Davis', score: 88 }
-]
+const handleStudentAdded = async () => {
+  await fetchStudents()
+}
 
 const subjects = [
   { name: 'Mathematics', icon: '🔢', average: 85 },
