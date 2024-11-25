@@ -107,6 +107,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'student-added'): void
+  (e: 'student-deleted'): void
 }>()
 
 const mode = ref<'create' | 'code'>('create')

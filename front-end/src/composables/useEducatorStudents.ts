@@ -62,6 +62,51 @@ export function useEducatorStudents() {
     }
   }
 
+  const removeStudent = async (studentId: number) => {
+    loading.value = true
+    error.value = null
+    try {
+      await axios.delete(`/api/educator/remove-student/${studentId}`)
+      await fetchStudents() // Refresh the list
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to remove student'
+      throw error.value
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const deleteStudent = async (studentId: number) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await axios.delete(`/api/educator/delete-student/${studentId}`);
+      if (response.status === 200) {
+        await fetchStudents(); // Refresh the list
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to delete student';
+      error.value = errorMessage;
+      throw new Error(errorMessage);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const updateStudent = async (studentId: number, data: { name: string; email: string }) => {
+    loading.value = true
+    error.value = null
+    try {
+      await axios.put(`/api/educator/update-student/${studentId}`, data)
+      await fetchStudents() // Refresh the list
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to update student'
+      throw error.value
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     students,
     loading,
@@ -70,6 +115,9 @@ export function useEducatorStudents() {
     canAddMoreStudents,
     fetchStudents,
     addStudent,
-    addExistingStudent
+    addExistingStudent,
+    removeStudent,
+    deleteStudent,
+    updateStudent
   }
 }

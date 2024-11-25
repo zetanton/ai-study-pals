@@ -4,6 +4,7 @@ const { User, StudentParent, StudentEducator } = require('../models/User');
 const auth = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 const { generateStudentCode } = require('../utils/userUtils');
+const sequelize = require('../config/database');
 
 // Add student to parent
 router.post('/parent/add-child', auth, async (req, res) => {
@@ -173,6 +174,121 @@ router.post('/parent/create-child', auth, async (req, res) => {
       message: 'Child created successfully',
       studentCode 
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Remove student association from educator
+router.delete('/educator/remove-student/:studentId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'educator') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    await StudentEducator.destroy({
+      where: {
+        educatorId: req.user.id,
+        studentId: req.params.studentId
+      }
+    });
+
+    res.json({ message: 'Student removed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete student completely (only if educator created them)
+router.delete('/educator/delete-student/:studentId', auth, async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    if (req.user.role !== 'educator') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // First check if the educator is associated with this student
+    const association = await StudentEducator.findOne({
+      where: {
+        educatorId: req.user.id,
+        studentId: req.params.studentId
+      },
+      transaction
+    });
+
+    if (!association) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Check if the student exists
+    const student = await User.findByPk(req.params.studentId, { transaction });
+    if (!student) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Delete all associations first
+    await StudentEducator.destroy({
+      where: { studentId: req.params.studentId },
+      transaction
+    });
+
+    await StudentParent.destroy({
+      where: { studentId: req.params.studentId },
+      transaction
+    });
+
+    // Finally delete the student
+    await User.destroy({
+      where: { id: req.params.studentId },
+      transaction
+    });
+
+    // If everything succeeded, commit the transaction
+    await transaction.commit();
+
+    res.json({ message: 'Student deleted successfully' });
+  } catch (error) {
+    // If anything fails, rollback the transaction
+    await transaction.rollback();
+    console.error('Error deleting student:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Update student information
+router.put('/educator/update-student/:studentId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'educator') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const { name, email } = req.body;
+
+    // Verify educator has access to this student
+    const association = await StudentEducator.findOne({
+      where: {
+        educatorId: req.user.id,
+        studentId: req.params.studentId
+      }
+    });
+
+    if (!association) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Update student information
+    await User.update(
+      { name, email },
+      { where: { id: req.params.studentId } }
+    );
+
+    res.json({ message: 'Student updated successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

@@ -56,12 +56,27 @@ export function useParentChildren() {
     }
   }
 
+  const deleteChild = async (childId: number) => {
+    loading.value = true
+    error.value = null
+    try {
+      await axios.delete(`/api/parent/remove-child/${childId}`)
+      await fetchChildren() // Refresh the list
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to remove child'
+      throw error.value
+    } finally {
+      loading.value = false
+    }
+  }
+  
   return {
     children,
     loading,
     error,
     fetchChildren,
     createChild,
-    addChild
+    addChild,
+    deleteChild
   }
 } 

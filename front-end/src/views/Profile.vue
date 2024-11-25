@@ -125,6 +125,7 @@
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth'
+import axios from 'axios'
 
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
@@ -178,11 +179,16 @@ const saveChanges = async () => {
 
 onMounted(async () => {
   try {
-    const response = await fetch('/api/profile')
-    const data = await response.json()
+    const response = await axios.get('/api/profile', {
+      headers: {
+        'Content-Type': 'application/json',
+        // Add your authentication header here if needed
+        // 'Authorization': `Bearer ${token}`
+      }
+    })
     profile.value = {
       ...profile.value,
-      ...data
+      ...response.data
     }
   } catch (error) {
     console.error('Failed to fetch profile:', error)
